@@ -1,0 +1,2 @@
+# Python 3.10 or later. Core algorithms, demo, benchmark, and tests use stdlib only.
+matplotlib>=3.8,<4

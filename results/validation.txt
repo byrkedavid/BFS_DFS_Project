@@ -1,0 +1,11 @@
+test_all_undirected_graphs_through_five_vertices (test_project.TraversalTests.test_all_undirected_graphs_through_five_vertices) ... ok
+test_deep_graph_and_frontier_shape (test_project.TraversalTests.test_deep_graph_and_frontier_shape) ... ok
+test_demo_outputs (test_project.TraversalTests.test_demo_outputs) ... ok
+test_directed_cycles_self_loops_and_duplicate_edges (test_project.TraversalTests.test_directed_cycles_self_loops_and_duplicate_edges) ... ok
+test_empty_and_invalid_inputs (test_project.TraversalTests.test_empty_and_invalid_inputs) ... ok
+test_graph_families_and_generation (test_project.TraversalTests.test_graph_families_and_generation) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.529s
+
+OK

@@ -1,0 +1,193 @@
+"""Create presentation-ready figures and a measured-results note from CSVs."""
+
+import argparse
+import csv
+import json
+import statistics
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+# The local dependency folder is for this build machine. A normal installation
+# with `python -m pip install -r requirements.txt` works without this folder.
+local_dependencies = Path(__file__).parent / ".plot_dependencies"
+if local_dependencies.exists():
+    sys.path.insert(0, str(local_dependencies))
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+from benchmark import FAMILIES
+from graphs import demo_graph
+from algorithms import bfs, dfs, path_to
+
+COLORS = {"bfs": "#1766a1", "dfs": "#c36318"}
+
+
+def aggregate(rows, family, method, metric):
+    by_size = defaultdict(list)
+    for row in rows:
+        if row["family"] == family and row["method"] == method:
+            by_size[int(row["vertices"])].append(float(row[metric]))
+    sizes = sorted(by_size)
+    return sizes, [statistics.median(by_size[n]) for n in sizes]
+
+
+def panel_figure(rows, metric, ylabel, title, filename, dest, scale=1, reference=False):
+    fig, axes = plt.subplots(2, 4, figsize=(15, 7.6), layout="constrained")
+    for ax, family in zip(axes.flat, FAMILIES):
+        for method in ("bfs", "dfs"):
+            sizes, values = aggregate(rows, family, method, metric)
+            values = [v / scale for v in values]
+            ax.plot(sizes, values, "o-", color=COLORS[method], label=method.upper(), markersize=4)
+            if reference:
+                work = []
+                for n in sizes:
+                    selected = [r for r in rows if r["family"] == family and
+                                r["method"] == method and int(r["vertices"]) == n]
+                    work.append(statistics.median(n + int(r["adjacency_entries"]) for r in selected))
+                ax.plot(sizes, [values[0] * w / work[0] for w in work], "--",
+                        color=COLORS[method], alpha=0.55, linewidth=1)
+        ax.set_title(family.capitalize())
+        ax.set_xlabel("Vertices V")
+        ax.set_ylabel(ylabel)
+        ax.grid(alpha=0.2)
+        ax.ticklabel_format(axis="y", style="plain", useOffset=False)
+    axes.flat[-1].axis("off")
+    axes.flat[-1].text(0.05, 0.9, "Blue: BFS\nOrange: DFS\n\nPoints: median across seeds\nof per-graph trial medians.\nRandom families use three seeds.\nOther families use one graph\nper size.\n" +
+                       ("\nDashed: V + adjacency entries,\nscaled to each first timing point.\nThis is a growth reference, not a fit." if reference else "\nInput graph memory is excluded.\nReturned traversal state is included."),
+                       va="top", fontsize=10, linespacing=1.5)
+    axes.flat[0].legend()
+    fig.suptitle(title, fontsize=16)
+    fig.savefig(dest / filename, dpi=180)
+    plt.close(fig)
+
+
+def demo_figure(dest):
+    graph = demo_graph()
+    positions = {0:(0, 1), 1:(1, 1), 2:(2, 1), 3:(3, 1), 4:(4, 1), 5:(4, 0),
+                 6:(0, 0), 7:(0, -1.4), 8:(1, -1.4), 9:(3, -1.4)}
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.8), layout="constrained")
+    for ax, method, result in zip(axes, ("bfs", "dfs"), (bfs(graph), dfs(graph))):
+        route = path_to(result, 5)
+        highlight = {frozenset((u, v)) for u, v in zip(route, route[1:])}
+        for u, row in enumerate(graph.adjacency):
+            for v in row:
+                if u < v:
+                    x, y = positions[u], positions[v]
+                    selected = frozenset((u, v)) in highlight
+                    ax.plot([x[0], y[0]], [x[1], y[1]], color=COLORS[method] if selected else "#bbbbbb",
+                            linewidth=3 if selected else 1.5, zorder=1)
+        for u, (x, y) in positions.items():
+            ax.scatter(x, y, s=550, color="white", edgecolors=COLORS[method], linewidth=2, zorder=2)
+            ax.text(x, y, str(u), ha="center", va="center", zorder=3)
+        ax.set_title(f"{method.upper()} path 0 to 5: {len(route) - 1} edges\n" + " -> ".join(map(str, route)))
+        ax.set_xlim(-0.5, 4.5)
+        ax.set_ylim(-2, 1.6)
+        ax.axis("off")
+    fig.suptitle("Same graph, same neighbor order: BFS guarantees the shortest unweighted path", fontsize=14)
+    fig.savefig(dest / "demo_paths.png", dpi=180)
+    plt.close(fig)
+
+
+def frontier_figure(rows, dest):
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), layout="constrained")
+    for ax, family in zip(axes, ("path", "star")):
+        for method in ("bfs", "dfs"):
+            n, values = aggregate(rows, family, method, "max_frontier")
+            ax.plot(n, values, "o-", color=COLORS[method], label=method.upper())
+        ax.set_title(family.capitalize())
+        ax.set_xlabel("Vertices V")
+        ax.set_ylabel("Peak queue vertices / DFS stack frames")
+        ax.grid(alpha=0.2)
+        ax.legend()
+    fig.suptitle("Graph shape changes the traversal frontier", fontsize=15)
+    fig.savefig(dest / "frontier_shape.png", dpi=180)
+    plt.close(fig)
+
+
+def write_findings(rows, results):
+    env = json.loads((results / "environment.json").read_text(encoding="utf-8"))
+    lines = ["# Measured results", "",
+             "These measurements were generated by running benchmark.py on the recorded machine. "
+             "They describe this Python implementation and this workload. Runtime differences do not establish a universal winner.", "",
+             f"Environment: Python {env['python'].split()[0]}, {env['platform']}. "
+             f"{len(env['graph_hashes'])} graphs, {env['runtime_trials']} runtime trials per algorithm per graph, "
+             f"{env['memory_trials']} separate memory trials. Full traversals start at vertex 0.", "",
+             "## Largest tested graph in each family", "",
+             "For random families, values below are medians across three seed-specific medians. "
+             "Frontier values also use the median across seeds. Timings are milliseconds and memory is KiB.", "",
+             "| Family | V | E | BFS ms | DFS ms | BFS peak KiB | DFS peak KiB | BFS frontier | DFS frames |",
+             "|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
+    for family in FAMILIES:
+        n = max(int(r["vertices"]) for r in rows if r["family"] == family)
+        current = [r for r in rows if r["family"] == family and int(r["vertices"]) == n]
+        values = {}
+        for method in ("bfs", "dfs"):
+            selected = [r for r in current if r["method"] == method]
+            values[method] = [statistics.median(float(r[k]) for r in selected)
+                              for k in ("runtime_median_ms", "peak_median_bytes", "max_frontier")]
+        b, d = values["bfs"], values["dfs"]
+        edges = int(statistics.median(int(r["edges"]) for r in current))
+        lines.append(f"| {family} | {n} | {edges} | {b[0]:.4f} | {d[0]:.4f} | "
+                     f"{b[1]/1024:.1f} | {d[1]/1024:.1f} | {b[2]:.0f} | {d[2]:.0f} |")
+    faster = sum(float(b["runtime_median_ms"]) < float(d["runtime_median_ms"])
+                 for b in rows if b["method"] == "bfs"
+                 for d in rows if d["method"] == "dfs" and
+                 all(b[k] == d[k] for k in ("family", "vertices", "seed")))
+    lines += ["", "## Findings supported by the data", "",
+              f"- BFS had a lower median runtime than DFS on {faster} of {len(rows)//2} paired graphs in this run. "
+              "DFS maintains iterator frames and repeatedly peeks at the active stack frame, which adds Python-level overhead. "
+              "This comparison includes the shared metrics and result bookkeeping.",
+              "- Every timed traversal visited V distinct vertices and examined exactly the number of adjacency entries. "
+              "For these loop-free undirected graphs that equals 2E. This operation count supports O(V + E) "
+              "even where short timing runs fluctuate.",
+              "- The 5,000-vertex path has BFS frontier 1 and DFS stack depth 5,000. The 5,000-vertex star "
+              "has BFS frontier 4,999 and DFS stack depth 2. Frontier size and total allocated memory are different metrics. "
+              "Both implementations also keep O(V) parent, depth, component, and order state.",
+              "- On dense generated graphs E grows approximately with V squared. Both traversals therefore "
+              "show approximately quadratic work with V while remaining linear in the stored input size V + E.",
+              "- The demo's BFS path from 0 to 5 uses 2 edges. The DFS tree path uses 5. Both visit the same "
+              "7 reachable vertices. Both full traversals find components {0,1,2,3,4,5,6}, {7,8}, and {9}.", "",
+              "## Figure captions", "",
+              "- runtime_by_family.png shows measured runtime and a scaled V + adjacency-entry growth reference. "
+              "The dashed curve is anchored at the first point and is neither a regression nor a timing prediction.",
+              "- memory_by_family.png shows median peak traced allocations during a traversal, excluding the input graph. "
+              "It includes returned traversal state and temporary allocations. It is not process RSS.",
+              "- frontier_shape.png isolates queue size and DFS frame depth on paths and stars.",
+              "- demo_paths.png shows the shortest-path counterexample used in the live demo.", "",
+              "## Limits and interpretation", "",
+              "These are synthetic graphs on one Windows machine, with deterministic ascending neighbors and fixed seeds. "
+              "Three seeds sample only a small part of each random graph distribution. Short timings are sensitive to OS load, "
+              "CPU power management, Python object allocation, and cache state. Batching reduces timer overhead. "
+              "No confidence intervals or formal performance significance claims are made. "
+              "The benchmark measures complete traversal, not early-stop point-to-point search. "
+              "The demo establishes application correctness, not application runtime superiority. "
+              "Memory tracing runs separately and cannot explain total machine memory consumption. "
+              "Graph generation, input storage, neighbor sorting, and validation are outside traversal timing. "
+              "DFS uses explicit iterator frames instead of the Python call stack. "
+              "All results must be rerun if the code, graph ordering, or experimental configuration changes.", ""]
+    (results / "FINDINGS.md").write_text("\n".join(lines), encoding="utf-8")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--results", type=Path, default=Path("results"))
+    args = parser.parse_args()
+    with (args.results / "summary.csv").open(encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream))
+    dest = args.results / "figures"
+    dest.mkdir(exist_ok=True)
+    plt.rcParams.update({"font.size": 10, "axes.spines.top": False, "axes.spines.right": False})
+    panel_figure(rows, "runtime_median_ms", "Median runtime (ms)", "Full traversal runtime across graph structures",
+                 "runtime_by_family.png", dest, reference=True)
+    panel_figure(rows, "peak_median_bytes", "Peak traced allocation (KiB)", "Traversal memory excluding the input graph",
+                 "memory_by_family.png", dest, scale=1024)
+    frontier_figure(rows, dest)
+    demo_figure(dest)
+    write_findings(rows, args.results)
+    print(f"Saved four figures and {args.results / 'FINDINGS.md'}")
+
+
+if __name__ == "__main__":
+    main()
