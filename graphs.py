@@ -1,7 +1,6 @@
 """Deterministic, simple, unweighted undirected graph generators."""
 
 import math
-import random
 
 from algorithms import Graph
 
@@ -14,8 +13,6 @@ def make_graph(family: str, n: int, seed=2026):
         edges = {(v - 1, v) for v in range(1, n)}
     elif family == "star":
         edges = {(0, v) for v in range(1, n)}
-    elif family == "tree":
-        edges = {((v - 1) // 2, v) for v in range(1, n)}
     elif family == "grid":
         width = max(1, math.isqrt(n))
         for v in range(n):
@@ -28,23 +25,6 @@ def make_graph(family: str, n: int, seed=2026):
         for group in range(3):
             vertices = list(range(group, max(0, n - 1), 3))
             edges.update(zip(vertices, vertices[1:]))
-    elif family == "sparse":
-        # A spanning path ensures connectivity. Extra edges keep E = O(V).
-        edges = {(v - 1, v) for v in range(1, n)}
-        rng = random.Random(seed)
-        target = min(3 * n, n * (n - 1) // 2)
-        while len(edges) < target:
-            u, v = sorted(rng.sample(range(n), 2))
-            edges.add((u, v))
-    elif family == "dense":
-        # Fixed p = 0.15, so expected E is Theta(V squared). A path is added
-        # explicitly to ensure connectivity, rather than conditioning on it.
-        rng = random.Random(seed)
-        edges = {(v - 1, v) for v in range(1, n)}
-        for u in range(n):
-            for v in range(u + 1, n):
-                if rng.random() < 0.15:
-                    edges.add((u, v))
     else:
         raise ValueError(f"Unknown graph family: {family}")
     return Graph.from_edges(n, edges)

@@ -34,7 +34,7 @@ def aggregate(rows, family, method, metric):
 
 
 def panel_figure(rows, metric, ylabel, title, filename, dest, scale=1, reference=False):
-    fig, axes = plt.subplots(2, 4, figsize=(15, 7.6), layout="constrained")
+    fig, axes = plt.subplots(2, 2, figsize=(11, 7.6), layout="constrained")
     for ax, family in zip(axes.flat, FAMILIES):
         for method in ("bfs", "dfs"):
             sizes, values = aggregate(rows, family, method, metric)
@@ -115,8 +115,8 @@ def write_findings(rows, results):
              f"{len(env['graph_hashes'])} graphs, {env['runtime_trials']} runtime trials per algorithm per graph, "
              f"{env['memory_trials']} separate memory trials. Full traversals start at vertex 0.", "",
              "## Largest tested graph in each family", "",
-             "For random families, values below are medians across three seed-specific medians. "
-             "Frontier values also use the median across seeds. Timings are milliseconds and memory is KiB.", "",
+             "The included families use one graph per size. "
+             "Timings are milliseconds and memory is KiB.", "",
              "| Family | V | E | BFS ms | DFS ms | BFS peak KiB | DFS peak KiB | BFS frontier | DFS frames |",
              "|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for family in FAMILIES:
@@ -145,8 +145,6 @@ def write_findings(rows, results):
               "- The 5,000-vertex path has BFS frontier 1 and DFS stack depth 5,000. The 5,000-vertex star "
               "has BFS frontier 4,999 and DFS stack depth 2. Frontier size and total allocated memory are different metrics. "
               "Both implementations also keep O(V) parent, depth, component, and order state.",
-              "- On dense generated graphs E grows approximately with V squared. Both traversals therefore "
-              "show approximately quadratic work with V while remaining linear in the stored input size V + E.",
               "- The demo's BFS path from 0 to 5 uses 2 edges. The DFS tree path uses 5. Both visit the same "
               "7 reachable vertices. Both full traversals find components {0,1,2,3,4,5,6}, {7,8}, and {9}.", "",
               "## Figure captions", "",
@@ -158,7 +156,7 @@ def write_findings(rows, results):
               "- demo_paths.png shows the shortest-path counterexample used in the live demo.", "",
               "## Limits and interpretation", "",
               "These are synthetic graphs on one Windows machine, with deterministic ascending neighbors and fixed seeds. "
-              "Three seeds sample only a small part of each random graph distribution. Short timings are sensitive to OS load, "
+              "Short timings are sensitive to OS load, "
               "CPU power management, Python object allocation, and cache state. Batching reduces timer overhead. "
               "No confidence intervals or formal performance significance claims are made. "
               "The benchmark measures complete traversal, not early-stop point-to-point search. "

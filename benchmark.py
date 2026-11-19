@@ -17,7 +17,7 @@ from pathlib import Path
 from algorithms import search
 from graphs import make_graph
 
-FAMILIES = ("path", "star", "tree", "grid", "sparse", "disconnected", "dense")
+FAMILIES = ("path", "star", "grid", "disconnected")
 
 
 def write_csv(path, rows):
@@ -77,8 +77,6 @@ def main():
         parser.error("Use at least 3 runtime trials and 1 memory trial")
     args.output.mkdir(parents=True, exist_ok=True)
     sizes = [100, 500] if args.quick else [100, 500, 1000, 2500, 5000]
-    dense_sizes = [50, 100] if args.quick else [50, 100, 200, 400, 800]
-    seeds = [2026] if args.quick else [2026, 2027, 2028]
     runtime_rows, memory_rows = [], []
     manifest = {
         "created_utc": datetime.now(timezone.utc).isoformat(),
@@ -91,8 +89,6 @@ def main():
         "runtime_trials": args.trials,
         "memory_trials": args.memory_trials,
         "sizes": sizes,
-        "dense_sizes": dense_sizes,
-        "random_seeds": seeds,
         "source_hashes": {
             p.name: hashlib.sha256(p.read_bytes()).hexdigest()
             for p in sorted(Path(__file__).parent.glob("*.py"))
@@ -101,9 +97,8 @@ def main():
         "scope": "Full traversals, undirected unweighted simple graphs, source 0; ascending neighbors",
     }
     for family in FAMILIES:
-        family_sizes = dense_sizes if family == "dense" else sizes
-        family_seeds = seeds if family in ("sparse", "dense") else [2026]
-        for n in family_sizes:
+        family_seeds = [2026]
+        for n in sizes:
             for seed in family_seeds:
                 graph = make_graph(family, n, seed)
                 base = {"family": family, "vertices": n, "edges": graph.edges,
