@@ -53,10 +53,6 @@ def panel_figure(rows, metric, ylabel, title, filename, dest, scale=1, reference
         ax.set_ylabel(ylabel)
         ax.grid(alpha=0.2)
         ax.ticklabel_format(axis="y", style="plain", useOffset=False)
-    axes.flat[-1].axis("off")
-    axes.flat[-1].text(0.05, 0.9, "Blue: BFS\nOrange: DFS\n\nPoints: median across seeds\nof per-graph trial medians.\nRandom families use three seeds.\nOther families use one graph\nper size.\n" +
-                       ("\nDashed: V + adjacency entries,\nscaled to each first timing point.\nThis is a growth reference, not a fit." if reference else "\nInput graph memory is excluded.\nReturned traversal state is included."),
-                       va="top", fontsize=10, linespacing=1.5)
     axes.flat[0].legend()
     fig.suptitle(title, fontsize=16)
     fig.savefig(dest / filename, dpi=180)

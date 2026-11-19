@@ -89,10 +89,6 @@ def main():
         "runtime_trials": args.trials,
         "memory_trials": args.memory_trials,
         "sizes": sizes,
-        "source_hashes": {
-            p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted(Path(__file__).parent.glob("*.py"))
-        },
         "graph_hashes": [],
         "scope": "Full traversals, undirected unweighted simple graphs, source 0; ascending neighbors",
     }

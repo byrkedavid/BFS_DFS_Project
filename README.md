@@ -13,7 +13,7 @@ python demo.py
 python -m unittest -v
 ```
 
-Read `docs/PRESENTATION_HANDOFF.md` next. It maps the instructor's slide sections to the implementation, figures, results, demo, and remaining team decisions. `results/FINDINGS.md` contains the actual measured results and their limitations.
+Read `results/FINDINGS.md` for the actual measured results and their limitations.
 
 ## Reproduce the experiments
 
@@ -28,7 +28,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe demo.py --output results_rerun/demo.json
 ```
 
-The original evidence stays in `results/`. A small verification benchmark can be run with `python benchmark.py --quick --output results_quick`. It uses fewer graph sizes and one random seed. The full benchmark is the basis for the supplied findings.
+The original evidence stays in `results/`. A small verification benchmark can be run with `python benchmark.py --quick --output results_quick`. It uses fewer graph sizes. The full benchmark is the basis for the supplied findings.
 
 ## Files
 
@@ -40,16 +40,12 @@ The original evidence stays in `results/`. A small verification benchmark can be
 | `benchmark.py` | Repeated runtime trials, separate memory trials, validations, graph fingerprints, environment capture |
 | `plot_results.py` | Regenerates four PNG figures and the measured-results note |
 | `test_project.py` | Independent correctness oracles and boundary cases |
-| `docs/METHODS.md` | Implementation decisions, pseudocode, complexity, experimental method, limitations |
-| `docs/PRESENTATION_HANDOFF.md` | Evidence map, proposed slide order, demo plan, likely questions, next steps |
-| `docs/SOURCES_AND_REQUIREMENTS.md` | Proposal scope, D2L requirements, verified source links, bibliography corrections |
 | `results/runtime_trials.csv` | Individual runtime records, with timing batch sizes |
 | `results/memory_trials.csv` | Individual peak-allocation records |
 | `results/summary.csv` | Per-graph, per-algorithm summaries |
 | `results/environment.json` | Environment, parameters, and graph fingerprints |
 | `results/demo.json` | Exact recorded demo inputs and outputs |
 | `results/validation.txt` | Output from the verification run |
-| `results/build_record.json` | SHA-256 fingerprints of the Python source files used for this delivery |
 | `results/figures/` | Runtime, traced memory, frontier shape, and demo path figures |
 
 ## Use the algorithms with another graph
@@ -73,4 +69,4 @@ Vertices use integer labels from 0 through n-1. Build graphs with `Graph.from_ed
 
 The live presentation window ends November 21, 2026. The presentation upload is due November 21 at 11:59 p.m. Eastern and the final report is due November 30 at 11:59 p.m. Eastern. The team still needs to confirm its Teams slot, assign speakers, rehearse, write the script, build the slides, incorporate this evidence into the shared report, and submit the required deliverables. Those decisions and submissions are outside this code package.
 
-The measured results describe these implementations on the recorded machine across path, star, grid, and disconnected graphs. Both algorithms perform O(V + E) full traversal work. Graph shape changes queue size and stack depth, and the demo shows BFS's shortest-path guarantee on unweighted graphs. See the detailed caveats in `docs/METHODS.md` and `results/FINDINGS.md` before using these claims.
+The measured results describe these implementations on the recorded machine across path, star, grid, and disconnected graphs. Both algorithms perform O(V + E) full traversal work. Graph shape changes queue size and stack depth, and the demo shows BFS's shortest-path guarantee on unweighted graphs. See the detailed caveats in `results/FINDINGS.md` before using these claims.

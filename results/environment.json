@@ -22,13 +22,6 @@
     2500,
     5000
   ],
-  "source_hashes": {
-    "algorithms.py": "89da5ebeeaa6ce197f7b939615a82665d5a656fac0ba92c6fc4b7bbce46eeba8",
-    "benchmark.py": "db1f2a40fce45ed0a1589e333cf3968fc04603582da83385f7c088ea1af88dd6",
-    "demo.py": "1cad0cc20a2b4e9f8518b89e0e65ad28d57b6f15ad5cc3205552f02bd99ca417",
-    "graphs.py": "7cfde04cd5e4039eb6df478683dbeb2e4ee38d5fe14d2fdc30cef772743f37d0",
-    "test_project.py": "7c99d10e0ef2961bba710f0e7082b484ff075d851c04bc774a2fbbe364ef68c9"
-  },
   "graph_hashes": [
     {
       "family": "path",
