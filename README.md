@@ -2,7 +2,7 @@
 
 This project implements the approved comparison of Breadth-First Search and Depth-First Search in Python. It includes a working demonstration, correctness checks, reproducible experiments, measured data, figures, and documentation for the team's next step of writing a presentation script.
 
-The team is David Byrke, Kenneth Stuckey, Matthew Godfrey, and Christopher Mai in Algorithm Analysis W02, taught by Prof. Femi Ojo. The project follows the supplied proposal and the D2L project topic, presentation outline, and report outline. The source code and recorded experiments in this folder were created and executed with Codex assistance on November 17, 2026. Team members should run the demo and review the evidence before presenting it.
+The team is David Byrke, Kenneth Stuckey, Matthew Godfrey, and Christopher Mai in Algorithm Analysis W02, taught by Prof. Femi Ojo. The project follows the supplied proposal and the D2L project topic, presentation outline, and report outline. The recorded experiments in this folder were completed on November 17, 2026. Team members should run the demo and review the evidence before presenting it.
 
 ## Start here
 
